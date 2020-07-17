@@ -1,8 +1,32 @@
-        /**
-         * 표준 출력장치를 파일로 redirect 하여, 소스 상에서 Console 로 출력하는 것을 파일로 저장한다.
-         * 파일로 출력을 끝내고 원래대로 Console로 출력하면 표준출력장치로 출력되도록 원복한다.
-         */
-        private void initStdOutToFile()
+    public partial class MainForm : Form
+    {
+        SNMPManager sm;
+        private TaskIntervalReq taskInt;
+        private Thread threadTask;
+
+        private string ip;
+        private int port;
+        private string communityRead;
+        private string communityWrite;
+
+        private TextWriter save;
+        private StreamWriter sw;
+
+        public MainForm()
+        {
+            InitializeComponent();
+            stdOutToFile();
+        }
+        
+        private void fetchConnInfo()
+        {
+            ip = textBox1.Text;
+            port = Int32.Parse(textBox7.Text);
+            communityRead = textBox20.Text;
+            communityWrite = textBox21.Text;
+        }
+
+        private void stdOutToFile()
         {
             // 로그파일 경로 지정
             string tempPath = Path.GetTempPath();
@@ -10,21 +34,30 @@
             string path = Path.Combine(tempPath, logFile);
 
             // 표준출력장치를 파일로 변경
-            var save = Console.Out;   // 표준 입력장치 저장
-            Console.WriteLine("MainForm.initStdOutToFile(), tempPath : " + tempPath);
+            save = Console.Out;   // 표준 입력장치 저장
+            Console.WriteLine("MainForm.stdOutToFile(), tempPath : " + tempPath);
             FileStream fs = File.Open(path, FileMode.Append);
-            StreamWriter sw = new StreamWriter(fs);
+            sw = new StreamWriter(fs);
             Console.SetOut(sw);
             Console.SetError(sw);
-            Console.WriteLine("파일로 출력합니다.");
+            Console.WriteLine(getStrNowYmdHms() + " 파일로 출력합니다.");
             testWriteException();
-            sw.Flush();
-            sw.Close();
-            // 파일에 대한 lock 해제되어 메모장에서 로그파일을 열수 있다.
+            //sw.Flush();
+            sw.AutoFlush = true;
+        }
 
-            // 표준출력장치 원복            
+        /**
+         * 표준출력장치로 출력하도록 원복
+         */ 
+        private void stdOutToConsole()
+        {
             Console.SetOut(save);
-            Console.WriteLine("화면으로 출력합니다.");
+            Console.WriteLine(getStrNowYmdHms() + " 화면으로 출력합니다.");
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            sw.Close();
         }
 
         private double testWriteException()
@@ -35,10 +68,10 @@
             try
             {
                 result = child / mom;
-            } 
+            }
             catch (Exception e)
             {
-                Console.WriteLine(e);                
+                Console.WriteLine(e);
             }
             return result;
         }
@@ -49,3 +82,32 @@
             string result = today.ToString("yyyyMMdd");
             return result;
         }
+
+        private string getStrNowYmdHms()
+        {
+            DateTime today = DateTime.Now;
+            string result = today.ToString("yyyyMMdd HHmmss");
+            return result;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (textBox1.Text.Equals(string.Empty) || textBox7.Text.Equals(string.Empty) || textBox20.Text.Equals(string.Empty) || textBox21.Text.Equals(string.Empty))
+                return;
+
+            fetchConnInfo();
+
+            sm = new SNMPManager();
+            sm.SetCommunity(communityRead, communityWrite);
+            if (sm.Kb_GetOnLine(ip, port).Equals("1"))
+            {
+                updateInfo();
+            }
+            else
+            {
+                Console.WriteLine(getStrNowYmdHms() + " 장비가 검색되지 않습니다.");
+                MessageBox.Show("장비가 검색되지 않습니다.");
+                Clear();
+            }
+        }
+    }
