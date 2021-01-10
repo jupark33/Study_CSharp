@@ -1,0 +1,3 @@
+
+Where 와 Order By 사용
+List<Candle> codeCandles = candles.OrderBy(x => x.time).Where(x => x.shcode == code).ToList();
