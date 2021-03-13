@@ -1,3 +1,7 @@
 
 Where 와 Order By 사용
 List<Candle> codeCandles = candles.OrderBy(x => x.time).Where(x => x.shcode == code).ToList();
+
+// List<FileInfo> tarList ,   tarList.Find 결과 값이 null 인 경우가 있으므로, null 아닌 경우만 add 해야 함.
+FileInfo fi = tarList.Find(x => x.Name.StartsWith(DateUtil.getYmd(dt)));
+if (fi != null) result.Add(fi);
